@@ -18,17 +18,21 @@ import java.awt.event.*;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+
 import java.net.Socket;
 
 public class Client extends JFrame {
     // create basic list of songs
-    private String songList[] = { "song1", "song2", "song3", "song4", "song5" };
+    private String songList[] = { "song1", "song2", "song3"};
 
     // GUI stuff
     // private JFrame frame = new JFrame("Music Streamer");
@@ -40,6 +44,9 @@ public class Client extends JFrame {
     private JScrollPane musicPanel = new JScrollPane(musicList);
     private JButton chatButton = new JButton("Chat", null);
     private JButton homeButton = new JButton("Home", null);
+    private JPanel song1 = new JPanel();
+    private JPanel song2 = new JPanel();
+    private JPanel song3 = new JPanel();
     
 
     // private JTextArea enteredText = new JTextArea(10, 32);
@@ -92,8 +99,8 @@ public class Client extends JFrame {
         JPanel chat = new JPanel();
 
         musicList.setLayoutOrientation(JList.VERTICAL);
-        // musicList.setVisibleRowCount(3);
 
+        // action listeners for switching cards
         homeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 CardLayout cl = (CardLayout) cards.getLayout();
@@ -107,10 +114,29 @@ public class Client extends JFrame {
             }
         });
 
+        // Code listens to mouse events on list of songs, if song is clicked it switches
+        // to show that card
+        ListSelectionListener listSelectionListener = new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent listSelectionEvent){
+                String song = (String) musicList.getSelectedValue();
+                CardLayout cl = (CardLayout) cards.getLayout();
+                cl.show(cards, song);
+            }
+        };
+        musicList.addListSelectionListener(listSelectionListener);
+
+        // hardcoding 3 songs to test functionality need to create better way
+        // to do this automatically to get rid of redundancy
+        song1.add(new JLabel("Song 1"));
+        song2.add(new JLabel("Song 2"));
+        song3.add(new JLabel("Song 3"));
+
+        // adding components to panels
         buttons.add(homeButton, BorderLayout.WEST);
         buttons.add(chatButton, BorderLayout.EAST);
         home.add(musicPanel, BorderLayout.CENTER);
 
+        // chat functionality
         enteredText.setEditable(false);
         enteredText.setBackground(Color.LIGHT_GRAY);
         typedText.addActionListener(new ActionListener() {
@@ -121,17 +147,22 @@ public class Client extends JFrame {
             }
         });
 
+        // adding components to chat panel
         chat.add(new JScrollPane(enteredText), BorderLayout.CENTER);
         chat.add(typedText, BorderLayout.SOUTH);
 
-        // display the window, with focus on typing box
-        // typedText.requestFocusInWindow();
+        // cardlayout allowing to switch between panels
         CardLayout cl = new CardLayout();
         cards.setLayout(cl);
 
+        // adding JPanels to cards
         cards.add(home, "home");
         cards.add(chat, "chat");
+        cards.add(song1, "song1");
+        cards.add(song2, "song2");
+        cards.add(song3, "song3");
 
+        // adding buttons panel and card container to main frame
         add(buttons, BorderLayout.NORTH);
         add(cards);
         setVisible(true);
