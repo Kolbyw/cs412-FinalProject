@@ -44,9 +44,9 @@
  
      public static void main(String[] args) throws Exception {
          Vector<Connection> connections        = new Vector<Connection>();
-         ServerSocket serverSocket             = new ServerSocket(4444);
+         ServerSocket serverSocket             = new ServerSocket(2000);
          ConnectionListener connectionListener = new ConnectionListener(connections);
-         ThreadPoolExecutor pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
+        //  ThreadPoolExecutor pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
  
          // thread that broadcasts messages to clients
          connectionListener.start();
@@ -62,7 +62,7 @@
              // listen to client in a separate thread
              Connection connection = new Connection(clientSocket);
              connections.add(connection);
-             pool.execute(connection);
+            //  pool.execute(connection);
              connection.start();
          }
      }

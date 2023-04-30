@@ -15,8 +15,10 @@
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
 
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -27,12 +29,14 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileFilter;
 
 import java.net.Socket;
 
+@SuppressWarnings({ "serial", "unused" })
 public class Client extends JFrame {
     // create basic list of songs
-    private String songList[] = { "song1", "song2", "song3"};
+    private String songList[] = { "song1", "song2", "song3", "song4", "song5" };
 
     // GUI stuff
     // private JFrame frame = new JFrame("Music Streamer");
@@ -40,14 +44,19 @@ public class Client extends JFrame {
     private JPanel buttons = new JPanel();
     private JTextArea enteredText = new JTextArea(10, 32);
     private JTextField typedText = new JTextField(32);
-    private JList musicList = new JList(songList);
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+	private JList musicList = new JList(songList);
     private JScrollPane musicPanel = new JScrollPane(musicList);
+    private JFileChooser fileChooser;
     private JButton chatButton = new JButton("Chat", null);
     private JButton homeButton = new JButton("Home", null);
+    private JButton uploadButton = new JButton("Upload", null);
     private JPanel song1 = new JPanel();
     private JPanel song2 = new JPanel();
     private JPanel song3 = new JPanel();
-    
+    private JPanel song4 = new JPanel();
+    private JPanel song5 = new JPanel();
+
 
     // private JTextArea enteredText = new JTextArea(10, 32);
     // private JTextField typedText = new JTextField(32);
@@ -67,7 +76,7 @@ public class Client extends JFrame {
 
         // connect to server
         try {
-            socket = new Socket(hostName, 4444);
+            socket = new Socket(hostName, 2000);
             out = new Out(socket);
             in = new In(socket);
         } catch (Exception ex) {
@@ -94,11 +103,26 @@ public class Client extends JFrame {
         setPreferredSize(new Dimension(400, 300));
         setLayout(new BorderLayout());
         pack();
+        typedText.requestFocusInWindow();
 
         JPanel home = new JPanel(new BorderLayout());
         JPanel chat = new JPanel();
+        
+        //to choose mp3 files only
+        fileChooser = new JFileChooser();
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
+            public boolean accept(File f) {
+                return f.getName().toLowerCase().endsWith(".mp3") || f.isDirectory();
+            }
+            public String getDescription() {
+                return "MP3 files (*.mp3)";
+            }
+        });
+        
 
         musicList.setLayoutOrientation(JList.VERTICAL);
+        // musicList.setVisibleRowCount(3);
 
         // action listeners for switching cards
         homeButton.addActionListener(new ActionListener() {
@@ -113,6 +137,34 @@ public class Client extends JFrame {
                 cl.show(cards, "chat");
             }
         });
+        JFileChooser fileChooser = new JFileChooser();
+        uploadButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setFileFilter(new FileFilter() {
+                    public String getDescription() {
+                        return "MP3 Files (*.mp3)";
+                    }
+
+                    public boolean accept(File file) {
+                        if (file.isDirectory()) {
+                            return true;
+                        } else {
+                            String filename = file.getName().toLowerCase();
+                            return filename.endsWith(".mp3");
+                        }
+                    }
+                });
+                int result = fileChooser.showOpenDialog(cards);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = fileChooser.getSelectedFile();
+                    // Do something with the selected file
+                    System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+                }
+            }
+        });
+        
 
         // Code listens to mouse events on list of songs, if song is clicked it switches
         // to show that card
@@ -125,15 +177,18 @@ public class Client extends JFrame {
         };
         musicList.addListSelectionListener(listSelectionListener);
 
-        // hardcoding 3 songs to test functionality need to create better way
+        // hardcoding 5 songs to test functionality need to create better way
         // to do this automatically to get rid of redundancy
         song1.add(new JLabel("Song 1"));
         song2.add(new JLabel("Song 2"));
         song3.add(new JLabel("Song 3"));
+        song4.add(new JLabel("Song 4"));
+        song5.add(new JLabel("Song 5"));
 
         // adding components to panels
         buttons.add(homeButton, BorderLayout.WEST);
         buttons.add(chatButton, BorderLayout.EAST);
+        buttons.add(uploadButton, BorderLayout.EAST);
         home.add(musicPanel, BorderLayout.CENTER);
 
         // chat functionality
@@ -151,6 +206,8 @@ public class Client extends JFrame {
         chat.add(new JScrollPane(enteredText), BorderLayout.CENTER);
         chat.add(typedText, BorderLayout.SOUTH);
 
+        // display the window, with focus on typing box
+        // typedText.requestFocusInWindow();
         // cardlayout allowing to switch between panels
         CardLayout cl = new CardLayout();
         cards.setLayout(cl);
@@ -161,18 +218,20 @@ public class Client extends JFrame {
         cards.add(song1, "song1");
         cards.add(song2, "song2");
         cards.add(song3, "song3");
+        cards.add(song4, "song4");
+        cards.add(song5, "song5");
 
         // adding buttons panel and card container to main frame
         add(buttons, BorderLayout.NORTH);
         add(cards);
         setVisible(true);
     }
-
+    
     // listen to socket and print everything that server broadcasts
     public void listen() {
         String s;
         while ((s = in.readLine()) != null) {
-            enteredText.insert(s + "\n", enteredText.getText().length());
+            enteredText.insert(s + "\n", enteredText.getCaretPosition());
             enteredText.setCaretPosition(enteredText.getText().length());
         }
         out.close();
