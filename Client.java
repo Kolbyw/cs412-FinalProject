@@ -16,7 +16,10 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.io.FileInputStream;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -42,10 +45,11 @@ public class Client extends JFrame {
     // private JFrame frame = new JFrame("Music Streamer");
     private JPanel cards = new JPanel();
     private JPanel buttons = new JPanel();
+    private JPanel musicControls = new JPanel();
     private JTextArea enteredText = new JTextArea(10, 32);
     private JTextField typedText = new JTextField(32);
     @SuppressWarnings({ "rawtypes", "unchecked" })
-	private JList musicList = new JList(songList);
+    private JList musicList = new JList(songList);
     private JScrollPane musicPanel = new JScrollPane(musicList);
     private JFileChooser fileChooser;
     private JButton chatButton = new JButton("Chat", null);
@@ -56,7 +60,6 @@ public class Client extends JFrame {
     private JPanel song3 = new JPanel();
     private JPanel song4 = new JPanel();
     private JPanel song5 = new JPanel();
-
 
     // private JTextArea enteredText = new JTextArea(10, 32);
     // private JTextField typedText = new JTextField(32);
@@ -100,15 +103,22 @@ public class Client extends JFrame {
         // create GUI stuff
         setTitle("Music Streamer");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setPreferredSize(new Dimension(400, 300));
+        setPreferredSize(new Dimension(400, 320));
         setLayout(new BorderLayout());
         pack();
         typedText.requestFocusInWindow();
 
         JPanel home = new JPanel(new BorderLayout());
         JPanel chat = new JPanel();
-        
-        //to choose mp3 files only
+
+        // music controls
+        musicControls.setVisible(false);
+        Icon pauseIcon = new ImageIcon("icons\\pause-button.png");
+        JButton pauseButton = new JButton(pauseIcon);
+        Icon playIcon = new ImageIcon("icons\\play-button.png");
+        JButton playButton = new JButton(playIcon);
+
+        // to choose mp3 files only
         fileChooser = new JFileChooser();
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
@@ -119,7 +129,6 @@ public class Client extends JFrame {
                 return "MP3 files (*.mp3)";
             }
         });
-        
 
         musicList.setLayoutOrientation(JList.VERTICAL);
         // musicList.setVisibleRowCount(3);
@@ -164,15 +173,22 @@ public class Client extends JFrame {
                 }
             }
         });
-        
 
         // Code listens to mouse events on list of songs, if song is clicked it switches
         // to show that card
+        MP3 mp3 = new MP3(null);
         ListSelectionListener listSelectionListener = new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent listSelectionEvent){
-                String song = (String) musicList.getSelectedValue();
-                CardLayout cl = (CardLayout) cards.getLayout();
-                cl.show(cards, song);
+            public void valueChanged(ListSelectionEvent listSelectionEvent) {
+                String song = "songs\\" + (String) musicList.getSelectedValue() + ".mp3";
+                mp3.changeSong(song);
+                mp3.play();
+
+                musicControls.setVisible(true);
+                playButton.setEnabled(false);
+                pauseButton.setEnabled(true);
+
+                // CardLayout cl = (CardLayout) cards.getLayout();
+                // cl.show(cards, song);
             }
         };
         musicList.addListSelectionListener(listSelectionListener);
@@ -185,11 +201,29 @@ public class Client extends JFrame {
         song4.add(new JLabel("Song 4"));
         song5.add(new JLabel("Song 5"));
 
+        // music control action listeners
+        playButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                mp3.play();
+                pauseButton.setEnabled(true);
+                playButton.setEnabled(false);
+            }
+        });
+        pauseButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                mp3.stop();
+                playButton.setEnabled(true);
+                pauseButton.setEnabled(false);
+            }
+        });
+
         // adding components to panels
         buttons.add(homeButton, BorderLayout.WEST);
         buttons.add(chatButton, BorderLayout.EAST);
         buttons.add(uploadButton, BorderLayout.EAST);
         home.add(musicPanel, BorderLayout.CENTER);
+        musicControls.add(playButton, BorderLayout.CENTER);
+        musicControls.add(pauseButton, BorderLayout.CENTER);
 
         // chat functionality
         enteredText.setEditable(false);
@@ -223,10 +257,11 @@ public class Client extends JFrame {
 
         // adding buttons panel and card container to main frame
         add(buttons, BorderLayout.NORTH);
-        add(cards);
+        add(cards, BorderLayout.CENTER);
+        add(musicControls, BorderLayout.SOUTH);
         setVisible(true);
     }
-    
+
     // listen to socket and print everything that server broadcasts
     public void listen() {
         String s;
