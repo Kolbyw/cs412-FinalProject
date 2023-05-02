@@ -1,22 +1,7 @@
-
-/******************************************************************************
- *  Compilation:  javac ChatClient.java
- *  Execution:    java ChatClient name host
- *  Dependencies: In.java Out.java
- *
- *  Connects to host server on port 4444, enables an interactive
- *  chat client.
- *  
- *  % java ChatClient alice localhost
- *
- *  % java ChatClient bob localhost
- *  
- ******************************************************************************/
-
 import java.awt.*;
 import java.awt.event.*;
-import java.io.File;
-import java.io.FileInputStream;
+import javax.sound.sampled.*;
+import java.io.*;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -33,14 +18,16 @@ import javax.swing.JTextField;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.plaf.multi.MultiScrollBarUI;
 
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 
 @SuppressWarnings({ "serial", "unused" })
 public class Client extends JFrame {
-    // create basic list of songs
-    private String songList[] = { "song1", "song2", "song3", "song4", "song5" };
-
     // GUI stuff
     // private JFrame frame = new JFrame("Music Streamer");
     private JPanel cards = new JPanel();
@@ -48,21 +35,10 @@ public class Client extends JFrame {
     private JPanel musicControls = new JPanel();
     private JTextArea enteredText = new JTextArea(10, 32);
     private JTextField typedText = new JTextField(32);
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private JList musicList = new JList(songList);
-    private JScrollPane musicPanel = new JScrollPane(musicList);
     private JFileChooser fileChooser;
     private JButton chatButton = new JButton("Chat", null);
     private JButton homeButton = new JButton("Home", null);
     private JButton uploadButton = new JButton("Upload", null);
-    private JPanel song1 = new JPanel();
-    private JPanel song2 = new JPanel();
-    private JPanel song3 = new JPanel();
-    private JPanel song4 = new JPanel();
-    private JPanel song5 = new JPanel();
-
-    // private JTextArea enteredText = new JTextArea(10, 32);
-    // private JTextField typedText = new JTextField(32);
 
     // socket for connection to chat server
     public Socket socket;
@@ -117,22 +93,13 @@ public class Client extends JFrame {
         JButton pauseButton = new JButton(pauseIcon);
         Icon playIcon = new ImageIcon("icons\\play-button.png");
         JButton playButton = new JButton(playIcon);
+        
+        JList musicLists = new JList();
+        loadSongList(musicLists);
+        JScrollPane musicPanel = new JScrollPane(musicLists);
 
-        // to choose mp3 files only
-        fileChooser = new JFileChooser();
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
-            public boolean accept(File f) {
-                return f.getName().toLowerCase().endsWith(".mp3") || f.isDirectory();
-            }
-            public String getDescription() {
-                return "MP3 files (*.mp3)";
-            }
-        });
-
-        musicList.setLayoutOrientation(JList.VERTICAL);
-        // musicList.setVisibleRowCount(3);
-
+        musicLists.setLayoutOrientation(JList.VERTICAL);
+        
         // action listeners for switching cards
         homeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -168,38 +135,56 @@ public class Client extends JFrame {
                 int result = fileChooser.showOpenDialog(cards);
                 if (result == JFileChooser.APPROVE_OPTION) {
                     File selectedFile = fileChooser.getSelectedFile();
+                    Path filePath = Paths.get(selectedFile.getAbsolutePath());
                     // Do something with the selected file
                     System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+                    
+                    byte[] mp3Bytes = null;
+					try {
+						mp3Bytes = Files.readAllBytes(filePath);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+                    System.out.println("MP3 file size: " + mp3Bytes.length + " bytes");
+                    String filename_temp = selectedFile.getAbsolutePath();
+                    String str = "This is a sentence.";
+                    
+                    String newString = filename_temp.replace("\\", "@@");
+                    System.out.println(newString);
+                    
+                    String[] words = newString.split("@@",5);
+                    System.out.println(words[4]);
+                    String serverFolder = ("C:\\Users\\kolby\\Documents\\cs412-FinalProject\\songs\\"+(words[4]));
+                    try {
+						copyDirectory(selectedFile.getAbsolutePath(),serverFolder);
+                        loadSongList(musicLists);
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+                    
+                	
                 }
             }
         });
+        
 
         // Code listens to mouse events on list of songs, if song is clicked it switches
         // to show that card
         MP3 mp3 = new MP3(null);
         ListSelectionListener listSelectionListener = new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent listSelectionEvent) {
-                String song = "songs\\" + (String) musicList.getSelectedValue() + ".mp3";
+                String song = "C:\\Users\\kolby\\Documents\\cs412-FinalProject\\songs\\" + (String) musicLists.getSelectedValue() + ".mp3";
                 mp3.changeSong(song);
                 mp3.play();
 
                 musicControls.setVisible(true);
                 playButton.setEnabled(false);
                 pauseButton.setEnabled(true);
-
-                // CardLayout cl = (CardLayout) cards.getLayout();
-                // cl.show(cards, song);
             }
         };
-        musicList.addListSelectionListener(listSelectionListener);
-
-        // hardcoding 5 songs to test functionality need to create better way
-        // to do this automatically to get rid of redundancy
-        song1.add(new JLabel("Song 1"));
-        song2.add(new JLabel("Song 2"));
-        song3.add(new JLabel("Song 3"));
-        song4.add(new JLabel("Song 4"));
-        song5.add(new JLabel("Song 5"));
+        listFiles();
+        musicLists.addListSelectionListener(listSelectionListener);
 
         // music control action listeners
         playButton.addActionListener(new ActionListener() {
@@ -249,11 +234,6 @@ public class Client extends JFrame {
         // adding JPanels to cards
         cards.add(home, "home");
         cards.add(chat, "chat");
-        cards.add(song1, "song1");
-        cards.add(song2, "song2");
-        cards.add(song3, "song3");
-        cards.add(song4, "song4");
-        cards.add(song5, "song5");
 
         // adding buttons panel and card container to main frame
         add(buttons, BorderLayout.NORTH);
@@ -262,7 +242,8 @@ public class Client extends JFrame {
         setVisible(true);
     }
 
-    // listen to socket and print everything that server broadcasts
+
+	// listen to socket and print everything that server broadcasts
     public void listen() {
         String s;
         while ((s = in.readLine()) != null) {
@@ -278,8 +259,61 @@ public class Client extends JFrame {
         }
         System.err.println("Closed client socket");
     }
+    
+    //Method for taking the selected file from the upload and moving it to the server's directory
+    public void copyDirectory(String sourceLocation , String targetLocation)
+    	    throws IOException {
 
-    public static void main(String[] args) {
+    	File sourceFile = new File(sourceLocation);
+    	File destinationFile = new File(targetLocation);
+
+    	FileInputStream fileInputStream = new FileInputStream(sourceFile);
+    	FileOutputStream fileOutputStream = new FileOutputStream(
+    	                destinationFile);
+
+    	int bufferSize;
+    	byte[] buffer = new byte[512];
+    	while ((bufferSize = fileInputStream.read(buffer)) > 0) {
+    	    fileOutputStream.write(buffer, 0, bufferSize);
+    	}
+    	fileInputStream.close();
+    	fileOutputStream.close();
+    	    }
+    
+     public ArrayList<String> listFiles()
+     {
+    	// Creates an array in which we will store the names of files and directories
+         String[] pathnames;
+
+         // Creates a new File instance by converting the given pathname string
+         // into an abstract pathname
+         File f = new File("C:\\Users\\kolby\\Documents\\cs412-FinalProject\\songs");
+
+         // Populates the array with names of files and directories
+         pathnames = f.list();
+         ArrayList<String> glb_pathname=new ArrayList<String>();  
+         //String glb_pathname[];
+         // For each pathname in the pathnames array
+         String global_str = "";
+         for (String pathname : pathnames) {
+             // Print the names of files and directories
+        	 System.out.print("list files");
+             System.out.println(pathname);
+             glb_pathname.add(pathname.replace(".mp3", ""));
+             
+         }
+         System.out.print(glb_pathname);
+         return glb_pathname;
+     }
+
+     public void loadSongList(JList musicList){
+        ArrayList<String> x = listFiles();
+        String[] stringArray = x.toArray(new String[0]);
+
+        musicList.setListData(stringArray);
+     }
+
+     public static void main(String[] args) {
         Client client = new Client(args[0], args[1]);
         client.listen();
     }
