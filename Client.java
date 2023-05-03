@@ -15,6 +15,7 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.border.Border;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
@@ -98,9 +99,17 @@ public class Client extends JFrame {
         loadSongList(musicLists);
         JScrollPane musicPanel = new JScrollPane(musicLists);
 
+        JButton refreshList = new JButton("Refresh Song List");
+
         musicLists.setLayoutOrientation(JList.VERTICAL);
         
-        // action listeners for switching cards
+        // action listeners
+        refreshList.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e){
+                loadSongList(musicLists);
+            }
+        });
+
         homeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 CardLayout cl = (CardLayout) cards.getLayout();
@@ -207,6 +216,7 @@ public class Client extends JFrame {
         buttons.add(chatButton, BorderLayout.EAST);
         buttons.add(uploadButton, BorderLayout.EAST);
         home.add(musicPanel, BorderLayout.CENTER);
+        home.add(refreshList, BorderLayout.NORTH);
         musicControls.add(playButton, BorderLayout.CENTER);
         musicControls.add(pauseButton, BorderLayout.CENTER);
 
