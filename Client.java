@@ -163,7 +163,7 @@ public class Client extends JFrame {
                     
                     String[] words = newString.split("@@",5);
                     System.out.println(words[4]);
-                    String serverFolder = ("C:\\Users\\kolby\\Documents\\cs412-FinalProject\\songs\\"+(words[4]));
+                    String serverFolder = (".\\songs\\"+(words[4]));
                     try {
 						copyDirectory(selectedFile.getAbsolutePath(),serverFolder);
                         loadSongList(musicLists);
@@ -171,8 +171,6 @@ public class Client extends JFrame {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
-                    
-                	
                 }
             }
         });
@@ -183,7 +181,7 @@ public class Client extends JFrame {
         MP3 mp3 = new MP3(null);
         ListSelectionListener listSelectionListener = new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent listSelectionEvent) {
-                String song = "C:\\Users\\kolby\\Documents\\cs412-FinalProject\\songs\\" + (String) musicLists.getSelectedValue() + ".mp3";
+                String song = ".\\songs\\" + (String) musicLists.getSelectedValue() + ".mp3";
                 mp3.changeSong(song);
                 mp3.play();
 
@@ -297,7 +295,7 @@ public class Client extends JFrame {
 
          // Creates a new File instance by converting the given pathname string
          // into an abstract pathname
-         File f = new File("C:\\Users\\kolby\\Documents\\cs412-FinalProject\\songs");
+         File f = new File(".\\songs");
 
          // Populates the array with names of files and directories
          pathnames = f.list();

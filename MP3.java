@@ -31,12 +31,7 @@ public class MP3 {
             player.stop();
             playing = false;
         }
-
     }
-
-    // public void pause() {
-
-    // }
 
     public void play() {
         try {
